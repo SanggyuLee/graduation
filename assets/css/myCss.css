@@ -1,0 +1,135 @@
+.search-nav {
+	height: 100%;
+	flex-direction: column;
+
+	display: -webkit-flex;
+	display:         flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.search-bar {
+	margin-top: 10px;
+	width: 100%;
+	flex-direction: row;
+
+	display: -webkit-flex;
+	display:         flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.contents {
+	display: flex;
+	flex-direction: column;
+
+	margin: 20px;
+
+	align-items: center;
+	justify-content: center;
+}
+
+.result {
+	background-color: rgba(255, 255, 255, 0.2);
+	border-radius: 10px;
+
+	overflow: auto;
+	margin: 20px;
+	padding: 10px;
+
+	width: 60%;
+}
+
+.youtube-result, .validate-result {
+	flex: 1;
+}
+
+.youtube-result {
+	background-color: rgba(255, 255, 255, 0.2);
+	border-radius: 10px;
+}
+
+.btn-video {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+
+	margin: 10px;
+	padding: 15px 0 15px 0;
+
+	border: 3px solid rgba(255, 255, 255, 0.6);
+	border-radius: 10px;
+
+	cursor: pointer;
+}
+
+.selected-video {
+}
+
+.video-title {
+	margin-top: 10px;
+}
+
+/*------------------------------------------------------------------------*/
+
+@font-face{
+	font-family: 'HoonMordernItalic';
+	src: url(font/HoonModern Bold italic.TTF) format('truetype');
+}
+
+.background-gradient {
+	background: linear-gradient(to bottom, #B79663, #596BA5);
+}
+
+#wrap{
+	width: 100%;
+	height:100%;
+	position: relative;
+	z-index: 1;
+}
+
+.homename-main{
+	font-family: 'HoonMordernItalic';
+	font-size: 5em;
+	font-weight: 900;
+	font-style: italic;
+	color: #FFFFFF;
+}
+
+.homename-container {
+	margin-top: 280px;
+	text-align: center;
+}
+
+.vertical-container {
+	text-align: center;
+	margin-bottom: 527px;
+}
+
+.searchbar-position{
+   margin : 20px;
+}
+
+#page{
+   width : 990px;
+   margin : 0 auto;
+}
+.startbutton_position{
+   width : 100px;
+   float : right;
+}
+
+#contents{
+   padding-top : 50px;
+   width : 500px;
+}
+.video-position{
+   width : 300px;
+   float : left;
+}
+.text-position{
+   width : 200px;
+   float : right;
+}
+
