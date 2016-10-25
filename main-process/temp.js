@@ -26,45 +26,46 @@ ipc.on('youtube-crawler', function (event, arg) {
 })
 
 ipc.on('youtube-download', function(event, arg) {
-	var fs = require('fs')
-	var ytdl = require('ytdl-core')
-	var ffmpeg = require('ffmpeg')
-	var videostream = fs.createWriteStream('video.flv')
-	var myytdl = ytdl(arg, {quality: 133})
-	var current = 0, total = 0
+	var fs = require('fs');
+	var ytdl = require('ytdl-core');
+	var ffmpeg = require('ffmpeg');
+	var get_youtube_id = require('get-youtube-id');
+	var file_name = get_youtube_id(arg) + '.flv';
+	var videostream = fs.createWriteStream('videos/' + file_name);
+	var myytdl = ytdl(arg, {quality: 133});
+	var current = 0, total = 0;
 
 	myytdl.on('data', function(data) {
-		current += data.length
-		var value = current / total * 100
+		current += data.length;
+		var value = current / total * 100;
 		var output = `
+			Downloading...
 			<div class="progress">
 				<div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
-					<span class="sr-only">${value}% Complete</span>
 				</div>
 			</div>
-		`
+		`;
 
-		event.sender.send('youtube-download-reply', output, arg)
+		event.sender.send('youtube-download-reply', output, arg);
 	})
 	.on('response', function(res) {
-		total = res.headers['content-length']
+		total = res.headers['content-length'];
 	})
 	.on('finish', function() {
-		event.sender.send('youtube-download-reply', "Download finished. We're caturing key frames", arg)
+		event.sender.send('youtube-download-reply', "Download finished. We're caturing key frames..", arg);
 	})
 	.pipe(videostream)
 
 	videostream.on('close', function() {
 		try {
-			var process = new ffmpeg('video.flv');
+			var process = new ffmpeg('videos/' + file_name);
 			process.then(function (video) {
 				// Callback mode
-				video.fnExtractFrameToJPG('./frame/', {
+				video.fnExtractFrameToJPG('./frame/' + file_name + '/', {
 					every_n_frames : 100,
 					file_name : 'my_frame_%t_%s'
 				}, function (error, files) {
-					if (!error)
-						console.log('Frames: ' + files);
+					event.sender.send('ffmpeg-reply', "We've successfully captured key frames..<br/>Now we're comparing if it matches..", arg);
 				});
 			}, function (err) {
 				console.log('Error: ' + err);

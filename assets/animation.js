@@ -8,7 +8,12 @@ ipc.on('youtube-crawler-reply', function(event, arg) {
 
 ipc.on('youtube-download-reply', function(event, arg, id) {
 	var elem = document.getElementById(id);
-	elem.querySelector(".progress").innerHTML = arg;
+	elem.querySelector(".download-progress").innerHTML = arg;
+});
+
+ipc.on('ffmpeg-reply', function(event, arg, id) {
+	var elem = document.getElementById(id);
+	elem.querySelector(".download-progress").innerHTML = arg;
 });
 
 function request_youtube(keyword) {
@@ -77,7 +82,7 @@ document.body.addEventListener('click', function(event) {
 						<iframe class="thumbnails" src=${array["id"]} frameborder="0" allowfullscreen></iframe>
 						<label class="video-title"> ${array["title"]} </label>
 					</div>
-					<div class="progress">
+					<div class="download-progress">
 					</div>
 				</div>`;
 
