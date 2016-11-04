@@ -11,7 +11,8 @@ ipc.on('youtube-download-reply', function(event, arg, id) {
 	elem.querySelector(".download-progress").innerHTML = arg;
 });
 
-ipc.on('ffmpeg-reply', function(event, arg, id) {
+ipc.on('ffmpeg-reply', function(event, arg, id, files) {
+	console.log(files);
 	var elem = document.getElementById(id);
 	elem.querySelector(".download-progress").innerHTML = arg;
 });
@@ -71,9 +72,13 @@ document.body.addEventListener('click', function(event) {
 
 			timer = setInterval(disappear, 50);
 		} else {
+			document.getElementById("btn-start").style.display = "inline-block";
 			request_youtube(document.querySelector(".keyword").value);
 		}
 	} else if(event.target.id === "btn-start") {
+		// TODO: Remove start button
+		document.getElementById("btn-start").style.display = "none";
+
 		var output = "";
 		selected_videos.map(function(array) {
 			output += `
@@ -89,6 +94,7 @@ document.body.addEventListener('click', function(event) {
 			ipc.send('youtube-download', array["id"]);
 		});
 
+		selected_videos = [];
 		document.querySelector(".result").innerHTML = output;
 	} else if(event.target.attributes.type.nodeValue === "btn-video") {
 		var id = event.target.id;
