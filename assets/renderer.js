@@ -12,9 +12,10 @@ ipc.on('youtube-download-reply', function(event, arg, id) {
 });
 
 ipc.on('ffmpeg-reply', function(event, arg, id, files) {
-	console.log(files);
+	console.log("ipc.on: 'ffmpeg-reply:" + files);
+
 	var elem = document.getElementById(id);
-	elem.querySelector(".download-progress").innerHTML = arg;
+	elem.querySelector(".keyframe-progress").innerHTML = arg;
 });
 
 function request_youtube(keyword) {
@@ -23,9 +24,11 @@ function request_youtube(keyword) {
 
 var state = "main";
 var selected_videos = [];
+
+// TODO: Comment out all console logs
 document.body.addEventListener('click', function(event) {
-	if(event.target.id === "btn-search") {
-		if(state !== "search") {
+	if(event.target.id === "btn-search") {	// When search btn is pressed
+		if(state !== "search") {	// Check if it's state is "search" which stands for the beginning
 			state = "search";
 
 			var search_nav = document.querySelector(".search-nav");
@@ -60,6 +63,7 @@ document.body.addEventListener('click', function(event) {
 						opacity += 0.04;
 						search_nav.style.opacity = opacity;
 
+						// If animation is done, it requests to youtube
 						if(opacity >= 1) {
 							clearInterval(timer);
 							request_youtube(document.querySelector(".keyword").value);
@@ -71,34 +75,44 @@ document.body.addEventListener('click', function(event) {
 			}
 
 			timer = setInterval(disappear, 50);
-		} else {
+		} else {	// If it's state is not the beginning
 			document.getElementById("btn-start").style.display = "inline-block";
 			request_youtube(document.querySelector(".keyword").value);
 		}
-	} else if(event.target.id === "btn-start") {
-		// TODO: Remove start button
+	} else if(event.target.id === "btn-start") {	// When start btn is pressed
+		// Remove start button
 		document.getElementById("btn-start").style.display = "none";
 
 		var output = "";
+
+		/* Make areas only for selected videos */
 		selected_videos.map(function(array) {
 			output += `
 				<div class="selected-video" id=${array["id"]}>
-					<div class="video">
+					<div class="video-area">
 						<iframe class="thumbnails" src=${array["id"]} frameborder="0" allowfullscreen></iframe>
 						<label class="video-title"> ${array["title"]} </label>
 					</div>
-					<div class="download-progress">
+					<div class="progress-area">
+						<div class="download-progress">
+						</div>
+						<div class="keyframe-progress">
+						</div>
 					</div>
 				</div>`;
 
 			ipc.send('youtube-download', array["id"]);
 		});
 
-		selected_videos = [];
 		document.querySelector(".result").innerHTML = output;
-	} else if(event.target.attributes.type.nodeValue === "btn-video") {
+
+		// Renew the array
+		selected_videos = [];
+	} else if(event.target.attributes.type.nodeValue === "btn-video") {	// When video is selected
 		var id = event.target.id;
 		var index = -1;
+
+		/* Check if it's already selected */
 		selected_videos.map(function(array, i) {
 			if(array["id"] === id) {
 				index = i;
@@ -106,7 +120,7 @@ document.body.addEventListener('click', function(event) {
 			}
 		});
 
-		if(index === -1) {
+		if(index === -1) {	// If it has not been selected, put this video into the array and change color
 			document.getElementById(event.target.id).style.border = "4px solid #ff7f50";
 
 			console.log(event.target.attributes);
@@ -116,7 +130,7 @@ document.body.addEventListener('click', function(event) {
 			array["title"] = event.target.attributes.title.nodeValue;
 
 			selected_videos.push(array);
-		} else {
+		} else {	// If it's already selected, remote this video from the array and change color
 			document.getElementById(event.target.id).style.border = "3px solid rgba(255, 255, 255, 0.6)";
 			selected_videos.splice(index, 1);
 		}

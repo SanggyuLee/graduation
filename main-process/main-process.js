@@ -26,6 +26,7 @@ ipc.on('youtube-crawler', function (event, arg) {
 	});
 })
 
+/* IPC receive for youtube downlod */
 ipc.on('youtube-download', function(event, arg) {
 	var ytdl = require('ytdl-core');
 	var ffmpeg = require('ffmpeg');
@@ -37,7 +38,6 @@ ipc.on('youtube-download', function(event, arg) {
 	var myytdl = ytdl(arg, {quality: 133});
 	var current = 0, total = 0;
 
-
 	myytdl.on('data', function(data) {
 		current += data.length;
 		var value = current / total * 100;
@@ -45,6 +45,7 @@ ipc.on('youtube-download', function(event, arg) {
 			Downloading...
 			<div class="progress">
 				<div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
+				${~~value}%
 				</div>
 			</div>
 		`;
@@ -55,12 +56,23 @@ ipc.on('youtube-download', function(event, arg) {
 		total = res.headers['content-length'];
 	})
 	.on('finish', function() {
-		event.sender.send('youtube-download-reply', "Download finished. We're caturing key frames..", arg);
+		var output = `
+			Download finished.
+			<div class="progress">
+				<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+				</div>
+			</div>
+		`;
+
+		event.sender.send('youtube-download-reply', output, arg);
 	})
 	.pipe(videostream)
 
 	videostream.on('close', function() {
+		event.sender.send('ffmpeg-reply', "Now we're gonna capture the keyframes..", arg);
+
 		try {
+			console.log("videostream.on");
 			var process = new ffmpeg('videos/' + file_name);
 			process.then(function (video) {
 				/* Extract keyfames */
@@ -69,16 +81,15 @@ ipc.on('youtube-download', function(event, arg) {
 					every_n_frames : 100,
 					file_name : '%s'
 				}, function (error, files) {
-					event.sender.send('ffmpeg-reply', "We've successfully captured key frames..<br/>Now we're comparing if it matches..", arg, files);
-
 					var imageDiff = require('image-diff');
 					var offset = 0;
 					var end = files.length - 1;
-					function check_keyframes(offset, end, files) {
+					function check_keyframes(offset, end, files) {	// Check the key frames if it's similar or not
 						var count = 0;
 
 						for(var i = offset; i < end; i++) {
-							if(i >= offset + 100)
+							// It request only 100 keyframes at once
+							if(i >= offset + 50)
 								break;
 
 							imageDiff.getFullResult({
@@ -98,7 +109,7 @@ ipc.on('youtube-download', function(event, arg) {
 								}
 
 								if((i - offset) == count) {
-									if(i != end - 1)
+									if(i != end - 1)	// If it's not end yet
 										check_keyframes(i, end, files);
 									else
 										console.log('successfully extracted keyframes');
@@ -106,8 +117,12 @@ ipc.on('youtube-download', function(event, arg) {
 							});
 						}
 
-						if(i == end) 
+						event.sender.send('ffmpeg-reply', "We've successfully captured key frames..<br/>Now we're comparing if it matches..", arg, files);
+
+						if(i == end)  {
 							console.log('successfully extracted keyframes');
+						} else {
+						}
 					}
 
 					check_keyframes(offset, end, files);
@@ -116,8 +131,8 @@ ipc.on('youtube-download', function(event, arg) {
 				console.log('Error: ' + err);
 			});
 		} catch (e) {
-			console.log(e.code);
-			console.log(e.msg);
+			console.log("Catch: " + e.code);
+			console.log("Catch: " + e.msg);
 		}
 	})
 })
