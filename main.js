@@ -13,8 +13,9 @@ let mainWindow = null;
 function loadDemos () {
 	var files = glob.sync(path.join(__dirname, 'main-process/**/*.js'));
 		files.forEach(function (file) {
-		require(file);
-	})
+			require(file);
+		}
+	);
 }
 
 function initialize() {
@@ -39,7 +40,7 @@ function initialize() {
 	
 	app.on('ready', function() {
 		createWindow();
-	})
+	});
 }
 
 initialize();

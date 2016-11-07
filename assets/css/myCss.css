@@ -80,6 +80,10 @@
 	flex: 1;
 }
 
+.compare-progress {
+	flex: 1;
+}
+
 .video-area {
 	flex: 1;
 	display: flex;

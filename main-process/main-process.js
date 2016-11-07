@@ -1,7 +1,27 @@
+const glob = require('glob');
+const path = require('path');
 const electron = require('electron');
 const fs = require('fs');
 
 const ipc = electron.ipcMain;
+
+function compare(filename) {
+	var frames = [];
+	glob(path.join(__dirname, '../frame/', filename, '*'),
+		function(err, files) {
+			console.log(files);
+			frames = files;
+		}
+	);
+
+	glob(path.join(__dirname, '../myframes/*'), 
+		function(err, folders) {
+			folders.forEach(function (folder) {
+				glob(path.join(folder,'*'), function(err, file) {
+				});
+			});
+	});
+}
 
 /* IPC receive for youtube crawling keyword */
 ipc.on('youtube-crawler', function (event, arg) {
@@ -56,6 +76,10 @@ ipc.on('youtube-download', function(event, arg) {
 		total = res.headers['content-length'];
 	})
 	.on('finish', function() {
+	})
+	.pipe(videostream)
+
+	videostream.on('close', function() {
 		var output = `
 			Download finished.
 			<div class="progress">
@@ -65,14 +89,10 @@ ipc.on('youtube-download', function(event, arg) {
 		`;
 
 		event.sender.send('youtube-download-reply', output, arg);
-	})
-	.pipe(videostream)
 
-	videostream.on('close', function() {
 		event.sender.send('ffmpeg-reply', "Now we're gonna capture the keyframes..", arg);
 
 		try {
-			console.log("videostream.on");
 			var process = new ffmpeg('videos/' + file_name);
 			process.then(function (video) {
 				/* Extract keyfames */
@@ -81,12 +101,14 @@ ipc.on('youtube-download', function(event, arg) {
 					every_n_frames : 100,
 					file_name : '%s'
 				}, function (error, files) {
+					event.sender.send('renderer-print', error);
 					var imageDiff = require('image-diff');
 					var offset = 0;
 					var end = files.length - 1;
-					function check_keyframes(offset, end, files) {	// Check the key frames if it's similar or not
-						var count = 0;
+					var count = 0;
 
+					function check_keyframes(offset, end, files) {	// Check the key frames if it's similar or not
+						var internal_count = 0;
 						for(var i = offset; i < end; i++) {
 							// It request only 100 keyframes at once
 							if(i >= offset + 50)
@@ -98,6 +120,7 @@ ipc.on('youtube-download', function(event, arg) {
 								diffImage: 'difference.jpg',
 							}, function(err, result, options) {
 								count++;
+								internal_count++;
 
 								if(result.percentage < 0.15) {
 									fs.unlink(options.actualImage, (err) => {
@@ -108,20 +131,35 @@ ipc.on('youtube-download', function(event, arg) {
 									});
 								}
 
-								if((i - offset) == count) {
-									if(i != end - 1)	// If it's not end yet
+								if((i - offset) == internal_count) {
+									if(count != end) {	// If it's not end yet
 										check_keyframes(i, end, files);
-									else
+									} else {
 										console.log('successfully extracted keyframes');
+										compare(file_name);
+									}
 								}
+
+								/* Making progress bar for keyframes */
+								var value = ~~(count / end * 100);
+								var string = (value === 100) ? 'Capturing Finished...' : 'Captureing keyframes...';
+								var type = (value === 100) ? 'progress-bar-success' : 'progress-bar-info';
+								var value_string = (value === 100) ? '' : value + '%';
+								var output = `
+									${string}
+								<div class="progress">
+									<div class="progress-bar ${type}" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
+									${value_string}
+								</div>
+									</div>
+									`;
+
+								event.sender.send('ffmpeg-reply', output, arg, files);
 							});
 						}
 
-						event.sender.send('ffmpeg-reply', "We've successfully captured key frames..<br/>Now we're comparing if it matches..", arg, files);
 
-						if(i == end)  {
-							console.log('successfully extracted keyframes');
-						} else {
+						if(count == end) {	// When it's done. 
 						}
 					}
 

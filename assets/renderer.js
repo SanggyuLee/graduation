@@ -18,6 +18,10 @@ ipc.on('ffmpeg-reply', function(event, arg, id, files) {
 	elem.querySelector(".keyframe-progress").innerHTML = arg;
 });
 
+ipc.on('renderer-print', function(event, arg) {
+	console.log(arg);
+});
+
 function request_youtube(keyword) {
 	ipc.send('youtube-crawler', keyword);
 }
@@ -97,6 +101,8 @@ document.body.addEventListener('click', function(event) {
 						<div class="download-progress">
 						</div>
 						<div class="keyframe-progress">
+						</div>
+						<div class="compare-progress">
 						</div>
 					</div>
 				</div>`;
