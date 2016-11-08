@@ -50,12 +50,10 @@ function compare(event, id, filename) {
 
 								current++;
 							} else {
-								current = frames.length * count++;
+								current = current - index + frames.length;
 								var similarity = ~~(max / myFrames[folder].length * 100);
 								console.log(filename + ":" + folder + " => Similarity : " + similarity);
 							}
-
-							console.log("total: " + total + ", current: " + current);
 
 							var value = ~~(current / total * 100);
 							var string = (value === 100) ? 'Comparing finished...' : 'Comparing keyframes...';
@@ -204,10 +202,10 @@ ipc.on('youtube-download', function(event, arg) {
 								var value_string = (value === 100) ? '' : value + '%';
 								var output = `
 									${string}
-								<div class="progress">
-									<div class="progress-bar ${type}" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
-									${value_string}
-								</div>
+									<div class="progress">
+										<div class="progress-bar ${type}" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
+											${value_string}
+										</div>
 									</div>
 									`;
 
