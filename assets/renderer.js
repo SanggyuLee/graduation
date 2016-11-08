@@ -21,6 +21,11 @@ ipc.on('compare-reply', function(event, arg, id) {
 	elem.querySelector(".compare-progress").innerHTML = arg;
 });
 
+ipc.on('result-reply', function(event, arg, id) {
+	var elem = document.getElementById(id);
+	elem.querySelector(".progress-area").innerHTML = arg;
+});
+
 ipc.on('renderer-print', function(event, arg) {
 	console.log(arg);
 });

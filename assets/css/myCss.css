@@ -99,6 +99,27 @@
 	flex-direction: column;
 }
 
+.match-found {
+	display: flex;
+	flex-direction: column;
+}
+
+.keyframe-pic {
+	flex: 1;
+}
+
+.keyframe-pic img {
+	width: 300px;
+	height: 150px;
+}
+
+.how-much {
+	flex: 1;
+	margin-top: 10px;
+	font-weight: bold;
+	color: red;
+}
+
 .video-title {
 	margin-top: 10px;
 }
