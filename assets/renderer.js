@@ -11,11 +11,14 @@ ipc.on('youtube-download-reply', function(event, arg, id) {
 	elem.querySelector(".download-progress").innerHTML = arg;
 });
 
-ipc.on('ffmpeg-reply', function(event, arg, id, files) {
-	console.log("ipc.on: 'ffmpeg-reply:" + files);
-
+ipc.on('ffmpeg-reply', function(event, arg, id) {
 	var elem = document.getElementById(id);
 	elem.querySelector(".keyframe-progress").innerHTML = arg;
+});
+
+ipc.on('compare-reply', function(event, arg, id) {
+	var elem = document.getElementById(id);
+	elem.querySelector(".compare-progress").innerHTML = arg;
 });
 
 ipc.on('renderer-print', function(event, arg) {

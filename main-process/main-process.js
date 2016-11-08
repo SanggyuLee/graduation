@@ -5,8 +5,9 @@ const fs = require('fs');
 
 const ipc = electron.ipcMain;
 
-function compare(filename) {
+function compare(event, id, filename) {
 	var frames = [];
+	/* Get the frames of one we have to check */
 	glob(path.join(__dirname, '../frame/', filename, '*'),
 		function(err, files) {
 			console.log(files);
@@ -14,10 +15,66 @@ function compare(filename) {
 		}
 	);
 
+	/* Get the frame folders of ours */
 	glob(path.join(__dirname, '../myframes/*'), 
 		function(err, folders) {
+			var total = frames.length * folders.length;
+			var current = 0;
+			var count = 1;
+
 			folders.forEach(function (folder) {
-				glob(path.join(folder,'*'), function(err, file) {
+				var myFrames = [];
+				myFrames[folder] = [];
+
+				/* Get the frames of each folders */
+				glob(path.join(folder,'*'), function(err, files) {
+					myFrames[folder] = files;
+
+					var imageDiff = require('image-diff');
+					var max = 0;
+					function imageCheck(index, index2, folder) {
+						imageDiff.getFullResult({
+							actualImage: frames[index],
+							expectedImage: myFrames[folder][index2],
+							diffImage: 'difference.jpg',
+						}, function(err, result, options) {
+							if(index < frames.length && index2 < myFrames[folder].length) {
+								if(result.percentage < 0.15) {	// If these are similar frames
+									imageCheck(++index, ++index2, folder);
+
+									if(max < index2)
+										max = index2;
+								} else {	// If these are different
+									imageCheck(++index, 0, folder);
+								}
+
+								current++;
+							} else {
+								current = frames.length * count++;
+								var similarity = ~~(max / myFrames[folder].length * 100);
+								console.log(filename + ":" + folder + " => Similarity : " + similarity);
+							}
+
+							console.log("total: " + total + ", current: " + current);
+
+							var value = ~~(current / total * 100);
+							var string = (value === 100) ? 'Comparing finished...' : 'Comparing keyframes...';
+							var type = (value === 100) ? 'progress-bar-success' : 'progress-bar-info';
+							var value_string = (value === 100) ? '' : value + '%';
+							var output = `
+								${string}
+								<div class="progress">
+									<div class="progress-bar ${type}" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
+									${value_string}
+								</div>
+									</div>
+								`;
+
+							event.sender.send('compare-reply', output, id);
+						});
+					}
+
+					imageCheck(0, 0, folder);
 				});
 			});
 	});
@@ -101,7 +158,7 @@ ipc.on('youtube-download', function(event, arg) {
 					every_n_frames : 100,
 					file_name : '%s'
 				}, function (error, files) {
-					event.sender.send('renderer-print', error);
+					//event.sender.send('renderer-print', error);
 					var imageDiff = require('image-diff');
 					var offset = 0;
 					var end = files.length - 1;
@@ -127,7 +184,7 @@ ipc.on('youtube-download', function(event, arg) {
 										if(err)
 											throw err;
 
-										console.log('successfully deleted: ' + options.actualImage);
+										//console.log('successfully deleted: ' + options.actualImage);
 									});
 								}
 
@@ -135,8 +192,8 @@ ipc.on('youtube-download', function(event, arg) {
 									if(count != end) {	// If it's not end yet
 										check_keyframes(i, end, files);
 									} else {
-										console.log('successfully extracted keyframes');
-										compare(file_name);
+										//console.log('successfully extracted keyframes');
+										compare(event, arg, file_name);
 									}
 								}
 
@@ -154,7 +211,7 @@ ipc.on('youtube-download', function(event, arg) {
 									</div>
 									`;
 
-								event.sender.send('ffmpeg-reply', output, arg, files);
+								event.sender.send('ffmpeg-reply', output, arg);
 							});
 						}
 
