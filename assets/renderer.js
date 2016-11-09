@@ -16,14 +16,14 @@ ipc.on('ffmpeg-reply', function(event, arg, id) {
 	elem.querySelector(".keyframe-progress").innerHTML = arg;
 });
 
-ipc.on('compare-reply', function(event, arg, id) {
+ipc.on('progress-reply', function(event, arg, id) {
 	var elem = document.getElementById(id);
-	elem.querySelector(".compare-progress").innerHTML = arg;
+	elem.querySelector(".progress-area").innerHTML = arg;
 });
 
 ipc.on('result-reply', function(event, arg, id) {
 	var elem = document.getElementById(id);
-	elem.querySelector(".progress-area").innerHTML = arg;
+	elem.querySelector(".result-area").innerHTML = arg;
 });
 
 ipc.on('renderer-print', function(event, arg) {
@@ -105,6 +105,7 @@ document.body.addEventListener('click', function(event) {
 						<iframe class="thumbnails" src=${array["id"]} frameborder="0" allowfullscreen></iframe>
 						<label class="video-title"> ${array["title"]} </label>
 					</div>
+
 					<div class="progress-area">
 						<div class="download-progress">
 						</div>
@@ -112,6 +113,9 @@ document.body.addEventListener('click', function(event) {
 						</div>
 						<div class="compare-progress">
 						</div>
+					</div>
+
+					<div class="result-area">
 					</div>
 				</div>`;
 

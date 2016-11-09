@@ -6,8 +6,9 @@ const fs = require('fs');
 const ipc = electron.ipcMain;
 
 function compare(event, id, filename) {
-	var frames = [];
+	let frames = [];
 	let result_output = '';
+	let result_bar = '';
 
 	/* Get the frames of one we have to check */
 	glob(path.join(__dirname, '../frame/', filename, '*'),
@@ -52,7 +53,6 @@ function compare(event, id, filename) {
 												minSimilarity = result.percentage;
 												minIndex = index2;
 											}
-
 										} else {	// If these are different
 											imageCheck(++index, 0, folder);
 										}
@@ -61,8 +61,8 @@ function compare(event, id, filename) {
 									} else {	// When index indicates end of the frames (When it's done for checking)
 										current = current - index + frames.length;
 		
-										var similarity = ~~(max / myFrames[folder].length * 100);
-										if(similarity >= 50) {
+										var similarity = ~~(max / frames.length * 100);
+										if(similarity >= 10) {
 											result_output += `
 												<div class="match-found">
 													<div class="keyframe-pic">
@@ -70,9 +70,27 @@ function compare(event, id, filename) {
 													</div>
 
 													<div class="how-much">
-														${similarity}% matching !!
+														Matching video found!!
 													</div>
 												</div>
+												`;
+
+											var color = '';
+											if(similarity >= 50)
+												color = 'orange';
+											else if(similarity >= 30)
+												color = '';
+											else
+												color = 'green';
+
+											result_bar += `
+													<div class="c100 p${similarity} ${color}">
+														<span>${similarity}%</span>
+														<div class="slice">
+															<div class="bar"></div>
+															<div class="fill"></div>
+														</div>
+													</div>
 												`;
 										}
 
@@ -82,7 +100,8 @@ function compare(event, id, filename) {
 											}
 
 											event.sender.send('renderer-print', result_output);
-											event.sender.send('result-reply', result_output, id);
+											event.sender.send('progress-reply', result_output, id);
+											event.sender.send('result-reply', result_bar, id);
 
 											return;
 										}
@@ -92,7 +111,10 @@ function compare(event, id, filename) {
 									var string = (value === 100) ? 'Comparing finished...' : 'Comparing keyframes...';
 									var type = (value === 100) ? 'progress-bar-success' : 'progress-bar-info';
 									var value_string = (value === 100) ? '' : value + '%';
-									var output = `
+									var progress_output = `
+										<div class="keyframe-pic">
+											<img src=${frames[index]}>
+										</div>
 										${string}
 										<div class="progress">
 											<div class="progress-bar ${type}" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
@@ -101,7 +123,7 @@ function compare(event, id, filename) {
 										</div>
 										`;
 		
-									event.sender.send('compare-reply', output, id);
+									event.sender.send('progress-reply', progress_output, id);
 								});
 							}
 		
@@ -176,7 +198,7 @@ ipc.on('youtube-download', function(event, id) {
 						var internal_count = 0;
 						for(var i = offset; i < end; i++) {
 							// It request only 100 keyframes at once
-							if(i >= offset + 100)
+							if(i >= offset + 50)
 								break;
 
 							imageDiff.getFullResult({

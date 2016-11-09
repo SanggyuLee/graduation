@@ -30,7 +30,7 @@
 }
 
 .result {
-	width: 700px;
+	width: 870px;
 	background-color: rgba(255, 255, 255, 0.2);
 	border-radius: 10px;
 
@@ -66,7 +66,7 @@
 .selected-video {
 	display: flex;
 
-	margin: 10px;
+	margin: 10px 10px 0 10px;
 	padding: 15px;
 
 	border: 3px solid rgba(255, 255, 255, 0.6);
@@ -86,17 +86,18 @@
 }
 
 .video-area {
-	flex: 1;
+	width: 300px;
 	display: flex;
 	flex-direction: column;
 
-	margin-right: 10px;
+	margin-right: 20px;
 }
 
 .progress-area {
-	flex: 1;
+	width: 300px;
 	display: flex;
 	flex-direction: column;
+	margin-right: 20px;
 }
 
 .match-found {
