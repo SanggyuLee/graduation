@@ -17,21 +17,24 @@ function compare(event, id, filename) {
 			/* Get the frame folders of ours */
 			glob(path.join(__dirname, '../myframes/*'), 
 				(err, folders) => {
-				console.log(filename + "frame : " + frames.length + ", folder : " + folders.length);
 					var total = frames.length * folders.length;
 					var current = 0;
 		
+					console.log(filename + "frame : " + frames.length + ", folder : " + folders.length);
+					console.log("total: " + total);
 					folders.forEach((folder) => {
 						var myFrames = [];
 						myFrames[folder] = [];
 
-		
+						var minSimilarity = 1, minIndex = 0;
+
 						/* Get the frames of each folders */
 						glob(path.join(folder,'*'), (err, files) => {
 							myFrames[folder] = files;
 		
 							var imageDiff = require('image-diff');
 							var max = 0;
+
 							/* Image Check function */
 							let imageCheck = (index, index2, folder) => {
 								imageDiff.getFullResult({
@@ -45,12 +48,17 @@ function compare(event, id, filename) {
 		
 											if(max < index2)
 												max = index2;
+											if(minSimilarity > result.percentage) {
+												minSimilarity = result.percentage;
+												minIndex = index2;
+											}
+
 										} else {	// If these are different
 											imageCheck(++index, 0, folder);
 										}
 		
 										current++;
-									} else {
+									} else {	// When index indicates end of the frames (When it's done for checking)
 										current = current - index + frames.length;
 		
 										var similarity = ~~(max / myFrames[folder].length * 100);
@@ -58,7 +66,7 @@ function compare(event, id, filename) {
 											result_output += `
 												<div class="match-found">
 													<div class="keyframe-pic">
-														<img src=${myFrames[folder][10]}>
+														<img src=${myFrames[folder][minIndex]}>
 													</div>
 
 													<div class="how-much">
@@ -66,6 +74,17 @@ function compare(event, id, filename) {
 													</div>
 												</div>
 												`;
+										}
+
+										if(current === total) {
+											if(result_output === '') {
+												result_output = 'No matching video found.';
+											}
+
+											event.sender.send('renderer-print', result_output);
+											event.sender.send('result-reply', result_output, id);
+
+											return;
 										}
 									}
 		
@@ -83,11 +102,6 @@ function compare(event, id, filename) {
 										`;
 		
 									event.sender.send('compare-reply', output, id);
-		
-									if(current === total) {
-										event.sender.send('renderer-print', result_output);
-										event.sender.send('result-reply', result_output, id);
-									}
 								});
 							}
 		
@@ -132,34 +146,9 @@ ipc.on('youtube-download', function(event, id) {
 	file_name = file_name.replace("_", "");
 	file_name = file_name.replace("-", "");
 
-	var videostream = fs.createWriteStream('videos/' + file_name);
-	var myytdl = ytdl(id, {quality: 133});
-	var current = 0, total = 0;
-
-	myytdl.on('data', function(data) {
-		current += data.length;
-		var value = current / total * 100;
+	function extract() {
 		var output = `
-			Downloading...
-			<div class="progress">
-				<div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
-				${~~value}%
-				</div>
-			</div>
-		`;
-
-		event.sender.send('youtube-download-reply', output, id);
-	})
-	.on('response', function(res) {
-		total = res.headers['content-length'];
-	})
-	.on('finish', function() {
-	})
-	.pipe(videostream)
-
-	videostream.on('close', function() {
-		var output = `
-			Download finished.
+			Download finished...
 			<div class="progress">
 				<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
 				</div>
@@ -175,10 +164,9 @@ ipc.on('youtube-download', function(event, id) {
 				/* Extract keyfames */
 				video.fnExtractFrameToJPG('./frame/' + file_name + '/', {
 					/* Extract options */
-					every_n_frames : 100,
+					every_n_frames : 300,
 					file_name : '%s'
 				}, function (error, files) {
-					//event.sender.send('renderer-print', error);
 					var imageDiff = require('image-diff');
 					var offset = 0;
 					var end = files.length - 1;
@@ -188,7 +176,7 @@ ipc.on('youtube-download', function(event, id) {
 						var internal_count = 0;
 						for(var i = offset; i < end; i++) {
 							// It request only 100 keyframes at once
-							if(i >= offset + 50)
+							if(i >= offset + 100)
 								break;
 
 							imageDiff.getFullResult({
@@ -249,5 +237,38 @@ ipc.on('youtube-download', function(event, id) {
 			console.log("Catch: " + e.code);
 			console.log("Catch: " + e.msg);
 		}
-	})
-})
+	}
+
+	if(fs.existsSync('videos/' + file_name)) {
+		extract();
+	} else {
+		var videostream = fs.createWriteStream('videos/' + file_name);
+		var myytdl = ytdl(id, {quality: 133});
+		var current = 0, total = 0;
+
+		myytdl.on('data', function(data) {
+			current += data.length;
+			var value = current / total * 100;
+			var output = `
+				Downloading...
+				<div class="progress">
+				<div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="${value}" aria-valuemin="0" aria-valuemax="100" style="width: ${value}%">
+				${~~value}%
+				</div>
+				</div>
+				`;
+
+			event.sender.send('youtube-download-reply', output, id);
+		})
+		.on('response', function(res) {
+			total = res.headers['content-length'];
+		})
+		.on('finish', function() {
+		})
+		.pipe(videostream);
+
+		videostream.on('close', function() {
+			extract();
+		});
+	}
+});
